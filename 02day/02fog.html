@@ -17,6 +17,10 @@
         function init(){
             var stats = initStats();  // 统计
             var scene = new THREE.Scene();
+
+            // 添加雾化效果
+            scene.fog = new THREE.Fog(0xffffff, 0.015, 100);
+            // scene.fog = new THREE.Fog(0xffffff, 0.015);
             var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             scene.add(camera);
 
@@ -25,9 +29,13 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMapEnabled = true;
 
+
+
             var planeGeometry = new THREE.PlaneGeometry(60, 40, 1, 1);
             var planeMaterial = new THREE.MeshLambertMaterial({color: 0xFFFFFF});
             var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            console.log(plane instanceof THREE.Mesh);  //  true
+            
             plane.receiveShadow = true;
 
             plane.rotation.x =-0.5 * Math.PI;
@@ -50,6 +58,7 @@
             spotLight.castShadow = true;
             scene.add(spotLight);
             document.getElementById("WebGL-output").appendChild(renderer.domElement);
+
 
             var step = 0;
             var controls = new function(){

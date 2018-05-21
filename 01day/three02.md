@@ -36,3 +36,11 @@
 4. page15-page16不知道是什么意思？
 5. 错误一：renderScene()的执行应该在所有变量的定义之后
 6. three05.html 使用ASCII效果时，显示 *THREE.AsciiEffect is not a constructor*，为什么???
+
+
+### 投影
+Three.js的光源默认不会导致物体间的投影，打开投影需要执行以下几步：
+1. 打开渲染器的地图阴影: renderer.shadowMapEnabled = true;
+2. 启用光线的投影：light.castShadow = true;
+3. 把模型设置为生成投影：mesh.castShadow = true;
+4. 把模型设置为接收阴影：mesh.receiveShadow= true;
