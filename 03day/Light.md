@@ -41,3 +41,8 @@
 2.  gui.addColor(controls, 'ambientColor').onChange(function(e){
         ambientLight.color = new THREE.Color(e)
     });
+
+
+
+### 问题
+03-spot-light 中光是锯齿状？？？    
