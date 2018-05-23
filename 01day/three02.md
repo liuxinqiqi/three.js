@@ -12,9 +12,6 @@
 2. 对光源产生反应的材质 *MeshLambertMaterial*  和 *MeshPhongMaterial*
 3. wireframe：框架
 
-### 光源
-1. SpotLight：会有锯齿状
-2. PointLight: 少量锯齿状
 
 ### 动画 
 1. requestAnimationFrame( *function* )方法: 可以指定一个函数，按照浏览器定义的时间间隔调用。可以在这个指定的函数里执行所有必要的绘画操作。
