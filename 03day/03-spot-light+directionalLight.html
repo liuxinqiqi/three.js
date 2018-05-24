@@ -114,12 +114,12 @@
             spotLight.shadowCameraFov = 30;  // 投影视场
             spotLight.target = plane;
             spotLight.distance = 0;
-            spotLight.angle = 0.4;
-
+            // spotLight.angle = 0.4;  // 加上之后光源有锯齿状投影
 
             scene.add(spotLight);
 
-            // 方向光
+
+            // 方向光 （产生地面上的平行投影）
             var pointColor = '#ff5808';
             var directionalLight = new THREE.DirectionalLight(pointColor);
             directionalLight.position.set(-40, 60, -10);
@@ -261,25 +261,6 @@
 
                     spotLight.position.copy(sphereLightMesh.position);
                 }
-
-                // move the light simulation 移动光源小球
-                // if (phase > 2 * Math.PI) {
-                //     invert = invert * -1;
-                //     phase -= 2 * Math.PI;
-                // } else {
-                //     phase += controls.rotationSpeed;
-                // }
-                // sphereLightMesh.position.z = +(7 * (Math.sin(phase)));
-                // sphereLightMesh.position.x = +(14 * (Math.cos(phase)));
-                // sphereLightMesh.position.y = 5;
-
-                // if (invert < 0) {
-                //     var pivot = 14;
-                //     sphereLightMesh.position.x = (invert * (sphereLightMesh.position.x - pivot)) + pivot;
-                // }
-
-                // spotLight.position.copy(sphereLightMesh.position);
-
 
 
 
