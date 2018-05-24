@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script type="text/javascript" src="../../learning-threejs-master/libs/three.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../learning-threejs-master/libs/stats.js"></script>
+    <script type="text/javascript" src="../../learning-threejs-master/libs/dat.gui.js"></script>
+    <script type="text/javascript" src="../../learning-threejs-master/libs/CanvasRenderer.js"></script>
+    <script type="text/javascript" src="../../learning-threejs-master/libs/Projector.js"></script>
+    <title>MeshBasicMaterial</title>
+</head>
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+    <script type="text/javascript">
+    function init(){
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var renderer;
+        var webGLRenderer = new THREE.WebGLRenderer(); 
+        webGLRenderer.setClearColor(new THREE.Color(0xeeeeee, 1.0));
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        webGLRenderer.shadowMapEnabled = true;
+        renderer = webGLRenderer;
+
+        var canvasRenderer = new THREE.CanvasRenderer();
+        canvasRenderer.setSize(window.innerWidth, window.innerHeight);
+
+        var groundGeom = new THREE.PlaneGeometry(100, 100, 4, 4);
+        var groundMesh = new THREE.Mesh(groundGeom, new THREE.MeshBasicMaterial({color: 0x7777777}));
+        groundMesh.rotation.x = -Math.PI / 2;
+        groundMesh.position.y = -20;
+        scene.add(groundMesh);
+
+        var sphereGeometry = new THREE.SphereGeometry(14, 20, 20);
+        var cubeGeometry = new THREE.BoxGeometry(15, 15, 15);
+        var planeGeometry = new THREE.PlaneGeometry(14, 14, 4, 4);
+
+        var meshMaterial = new THREE.MeshBasicMaterial({color: 0x7777ff});
+
+        var sphere = new THREE.Mesh(sphereGeometry, meshMaterial);
+        var cube = new THREE.Mesh(cubeGeometry, meshMaterial);
+        var plane = new THREE.Mesh(planeGeometry, meshMaterial);
+
+        sphere.position.x = 0;
+        sphere.position.y = 3;
+        sphere.position.z = 2;
+
+        cube.position = sphere.position;
+        plane.position = sphere.position;
+
+        scene.add(cube);
+
+        camera.position.x = -20;
+        camera.position.y = 50;
+        camera.position.z = 40;
+        camera.lookAt(new THREE.Vector3(10, 0, 0));
+
+        var ambientLight = new THREE.AmbientLight(0x0c0c0c);
+        scene.add(ambientLight);
+
+        var spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-40, 60, -10);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        document.getElementById("WebGL-output").appendChild(renderer.domElement);
+
+        var step = 0;
+        var controls = new function(){
+            this.rotationSpeed = 0.02;
+            this.bouncingSpeed = 0.03;
+
+            this.opacity = meshMaterial.opacity;  // 透明度，和transparent一起使用
+            this.transparent = meshMaterial.transparent; // 是否透明，和opacity一起使用
+            this.overdraw = meshMaterial.overdraw;  // 过渡描绘
+            this.visible = meshMaterial.visible;
+            this.side = 'front';
+
+            this.color = meshMaterial.color.getStyle();
+            this.wireframe = meshMaterial.wireframe;  // 线框
+            this.wireframeLinewidth = meshMaterial.wireframeLinewidth;  // 线框线宽
+            this.wireFrameLineJoin = meshMaterial.wireframeLinejoin;  // 线框线段连接点
+
+            this.selectedMesh = "cube";  // 一开始显示的内容是cube
+
+            this.switchRenderer = function(){
+                if(renderer instanceof THREE.WebGLRenderer){
+                    renderer = canvasRenderer;
+                    console.log("canvas 呈现网格");
+                    $("#WebGL-output").empty();
+                    // document.getElementById("WebGL-output").empty();
+                    document.getElementById("WebGL-output").appendChild(renderer.domElement);
+                }else{
+                    renderer = webGLRenderer;
+                    console.log("webGL 呈现非网格");
+                    
+                    $("#WebGL-output").empty();
+                    // document.getElementById("WebGL-output").empty();
+                    document.getElementById("WebGL-output").appendChild(renderer.domElement);
+                }
+            }
+        };
+
+        var gui = new dat.GUI();
+        var spGui = gui.addFolder("Mesh");
+        spGui.add(controls, 'opacity', 0, 1).onChange(function(e){
+            meshMaterial.opacity = e
+        });
+        spGui.add(controls, "transparent").onChange(function(e){
+            meshMaterial.transparent = e;
+        });
+        spGui.add(controls, 'wireframe').onChange(function (e) {
+            meshMaterial.wireframe = e
+        });
+        spGui.add(controls, 'wireframeLinewidth', 0, 20).onChange(function(e){
+            meshMaterial.wireframeLinewidth = e
+        });
+        spGui.add(controls, 'visible').onChange(function(e){
+            meshMaterial.visible = e;
+        });
+        spGui.add(controls, 'side', ['front', 'back', 'double']).onChange(function(e){
+            switch (e) {
+                case "front":
+                    meshMaterial.side = THREE.FrontSide;
+                    break;
+                case "back":
+                    meshMaterial.side = THREE.BackSide;
+                    break;
+                case "double":
+                    meshMaterial.side = THREE.DoubleSide;
+                    break;
+            }
+            meshMaterial.needsUpdate = true;
+        });
+        spGui.addColor(controls, 'color').onChange(function(e){
+            meshMaterial.color.setStyle(e)
+        });
+        spGui.add(controls, 'selectedMesh', ["cube", "sphere", "plane"]).onChange(function (e) {
+
+            scene.remove(plane);
+            scene.remove(cube);
+            scene.remove(sphere);
+
+            switch (e) {
+                case "cube":
+                    scene.add(cube);
+                    break;
+                case "sphere":
+                    scene.add(sphere);
+                    break;
+                case "plane":
+                    scene.add(plane);
+                    break;
+
+            }
+
+            scene.add(e);
+            });
+
+            gui.add(controls, 'switchRenderer'); // 停止转动
+            var cvGui = gui.addFolder('Canvas renderer');
+            cvGui.add(controls, 'overdraw').onChange(function(e){
+                meshMaterial.overdraw = e
+            });
+            cvGui.add(controls, 'wireFrameLineJoin', ['round', 'bevel', 'miter']).onChange(function (e) {
+                meshMaterial.wireframeLinejoin = e
+            });
+
+
+            render();
+            function render(){
+                stats.update();
+                cube.rotation.y = step += 0.01;
+                cube.rotation.y = step;
+                cube.rotation.y = step;
+                requestAnimationFrame(render);
+                renderer.render(scene, camera)
+            }
+
+            function initStats() {
+
+                var stats = new Stats();
+
+                stats.setMode(0); // 0: fps, 1: ms
+
+                // Align top-left
+                stats.domElement.style.position = 'absolute';
+                stats.domElement.style.left = '0px';
+                stats.domElement.style.top = '0px';
+
+                document.getElementById("Stats-output").appendChild(stats.domElement);
+
+                return stats;
+                }
+
+
+
+
+    }
+    window.onload = init;
+    </script>
+</body>
+</html>
