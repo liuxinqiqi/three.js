@@ -3,7 +3,7 @@
 <html>
 
 <head>
-    <title>Example 04.04 - Mesh normal material</title>
+    <title>Example 04.06 - Mesh Lambert material</title>
     <script type="text/javascript" src="../../learning-threejs-master/libs/three.js"></script>
     <script type="text/javascript" src="../../learning-threejs-master/libs/stats.js"></script>
     <script type="text/javascript" src="../../learning-threejs-master/libs/dat.gui.js"></script>
@@ -22,43 +22,46 @@
 
 <div id="Stats-output">
 </div>
-<!-- Div which will hold the Output -->
+
 <div id="WebGL-output">
 </div>
 
-<!-- Javascript code that runs our Three.js examples -->
 <script type="text/javascript">
 
-    // once everything is loaded, we run our Three.js stuff.
+
     function init() {
 
         var stats = initStats();
+
+
         var scene = new THREE.Scene();
+
+
         var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+
         var renderer;
         var webGLRenderer = new THREE.WebGLRenderer();
         webGLRenderer.setClearColor(new THREE.Color(0xEEEEEE, 1.0));
         webGLRenderer.setSize(window.innerWidth, window.innerHeight);
         webGLRenderer.shadowMapEnabled = true;
 
-        // 1. 使用CanvasRenderer对象
         var canvasRenderer = new THREE.CanvasRenderer();
         canvasRenderer.setSize(window.innerWidth, window.innerHeight);
         renderer = webGLRenderer;
 
         var groundGeom = new THREE.PlaneGeometry(100, 100, 4, 4);
-        var groundMesh = new THREE.Mesh(groundGeom, new THREE.MeshBasicMaterial({color: 0x777777}));
+        var groundMesh = new THREE.Mesh(groundGeom, new THREE.MeshBasicMaterial({color: 0x555555}));
         groundMesh.rotation.x = -Math.PI / 2;
         groundMesh.position.y = -20;
         scene.add(groundMesh);
 
-        // 2. 三种不同的几何体
         var sphereGeometry = new THREE.SphereGeometry(14, 20, 20);
         var cubeGeometry = new THREE.BoxGeometry(15, 15, 15);
         var planeGeometry = new THREE.PlaneGeometry(14, 14, 4, 4);
 
-        // 3. 网格法向材质
-        var meshMaterial = new THREE.MeshNormalMaterial({color: 0x7777ff});
+        // 知识点1 改变材质 MeshPhongMaterial
+        var meshMaterial = new THREE.MeshPhongMaterial({color: 0x7777ff});
         var sphere = new THREE.Mesh(sphereGeometry, meshMaterial);
         var cube = new THREE.Mesh(cubeGeometry, meshMaterial);
         var plane = new THREE.Mesh(planeGeometry, meshMaterial);
@@ -67,28 +70,10 @@
         sphere.position.y = 3;
         sphere.position.z = 2;
 
-        // 4. .faces: triangles数组。三角面数组，用来描述模型中的每个顶点是如何相互连接的。
-        for (var f = 0, fl = sphere.geometry.faces.length; f < fl; f++) {
-            var face = sphere.geometry.faces[f];
-            var centroid = new THREE.Vector3(0, 0, 0);
-            centroid.add(sphere.geometry.vertices[face.a]);
-            centroid.add(sphere.geometry.vertices[face.b]);
-            centroid.add(sphere.geometry.vertices[face.c]);
-            centroid.divideScalar(3);
-            // 5. ArrowHelper  箭头辅助
-            var arrow = new THREE.ArrowHelper(
-                    face.normal,
-                    centroid,
-                    2,
-                    0x3333FF,
-                    0.5,
-                    0.5);
-            sphere.add(arrow);
-        }
 
-        // cube 和 plane的位置与sphere一致
         cube.position = sphere.position;
         plane.position = sphere.position;
+
         scene.add(cube);
 
         camera.position.x = -20;
@@ -100,31 +85,38 @@
         scene.add(ambientLight);
 
         var spotLight = new THREE.SpotLight(0xffffff);
-        spotLight.position.set(-40, 60, -10);
+        spotLight.position.set(-30, 60, 60);
         spotLight.castShadow = true;
         scene.add(spotLight);
 
         document.getElementById("WebGL-output").appendChild(renderer.domElement);
 
         var step = 0;
-        var oldContext = null;
 
         var controls = new function () {
-            // this.rotationSpeed = 0.02;
-            // this.bouncingSpeed = 0.03;
-
             this.opacity = meshMaterial.opacity;
             this.transparent = meshMaterial.transparent;
-
+            this.overdraw = meshMaterial.overdraw;
             this.visible = meshMaterial.visible;
+            this.emissive = meshMaterial.emissive.getHex();  // 1. 该材质发射的颜色，默认是black，不受光照影响
+            this.ambient = meshMaterial.ambient.getHex();   // 2. 材质的环境色，和AmbientLight光源一起使用（二者颜色相乘），默认是white
             this.side = "front";
 
-            this.wireframe = meshMaterial.wireframe;
-            this.wireframeLinewidth = meshMaterial.wireframeLinewidth;
+            this.color = meshMaterial.color.getStyle();
+
+            // 3. this.wrapAround和this.wrapRGB所关联的着色器语言
+            this.wrapAround = false;  // 4. 是否遮罩
+            this.wrapR = 1;  // 5. 与wrapAround一起使用，通过设置wrapRGB的数值,对材质颜色进行线性混合.
+            this.wrapG = 1;
+            this.wrapB = 1;
 
             this.selectedMesh = "cube";
-
-            this.shadow = "flat";
+            
+            // 6. specular(镜面的) 指定该材质的光亮程度及其高光部分的颜色
+            this.specular = meshMaterial.specular.getHex();
+            // 7. 指定高光部分的亮度
+            this.shininess = meshMaterial.shininess;
+            this.metal = false;
 
         };
 
@@ -136,16 +128,22 @@
             meshMaterial.opacity = e
         });
         spGui.add(controls, 'transparent').onChange(function (e) {
-            meshMaterial.transparent = e  // 与opacity有关
-        });
-        spGui.add(controls, 'wireframe').onChange(function (e) {
-            meshMaterial.wireframe = e
-        });
-        spGui.add(controls, 'wireframeLinewidth', 0, 20).onChange(function (e) {
-            meshMaterial.wireframeLinewidth = e
+            meshMaterial.transparent = e
         });
         spGui.add(controls, 'visible').onChange(function (e) {
             meshMaterial.visible = e
+        });
+        spGui.addColor(controls, 'ambient').onChange(function (e) {
+            meshMaterial.ambient = new THREE.Color(e)
+        });
+        spGui.addColor(controls, 'emissive').onChange(function (e) {
+            meshMaterial.emissive = new THREE.Color(e)
+        });
+        spGui.addColor(controls, 'specular').onChange(function(e){
+            meshMaterial.specular = new THREE.Color(e);
+        });
+        spGui.add(controls, 'shininess', 0, 20).onChange(function(e){
+            meshMaterial.shininess = e;
         });
         spGui.add(controls, 'side', ["front", "back", "double"]).onChange(function (e) {
             console.log(e);
@@ -163,64 +161,21 @@
             meshMaterial.needsUpdate = true;
 
         });
-        spGui.add(controls, 'shadow', ["flat", "smooth"]).onChange(function (e) {
-            switch (e) {
-                case "flat":
-                    // https://github.com/mrdoob/three.js/issues/1929
-                    // 6. shading : 着色，可选值是FlatShading 和 SmoothShading
-                    meshMaterial.shading = THREE.FlatShading;
-                    break;
-                case "smooth":
-                    meshMaterial.shading = THREE.SmoothShading;
-                    break;
-            }
-
-            var oldPos = sphere.position.clone();
-            scene.remove(sphere);
-            scene.remove(plane);
-            scene.remove(cube);  // 全部移除后重新赋值（改变了材料中的属性），但是还没有添加
-            sphere = new THREE.Mesh(sphere.geometry.clone(), meshMaterial);
-            cube = new THREE.Mesh(cube.geometry.clone(), meshMaterial);
-            plane = new THREE.Mesh(plane.geometry.clone(), meshMaterial);
-
-            sphere.position = oldPos;
-            cube.position = oldPos;
-            plane.position = oldPos;
-
-            switch (controls.selectedMesh) {
-                case "cube":
-                    scene.add(cube);
-
-                    break;
-                case "sphere":
-                    scene.add(sphere);
-
-                    break;
-                case "plane":
-                    scene.add(plane);
-                    break;
-
-            }
-
-            meshMaterial.needsUpdate = true;
-            console.log(meshMaterial);
+        spGui.addColor(controls, 'color').onChange(function (e) {
+            meshMaterial.color.setStyle(e)
         });
-
         spGui.add(controls, 'selectedMesh', ["cube", "sphere", "plane"]).onChange(function (e) {
 
             scene.remove(plane);
             scene.remove(cube);
             scene.remove(sphere);
 
-
             switch (e) {
                 case "cube":
                     scene.add(cube);
-
                     break;
                 case "sphere":
                     scene.add(sphere);
-
                     break;
                 case "plane":
                     scene.add(plane);
@@ -228,7 +183,29 @@
 
             }
 
+
             scene.add(e);
+        });
+
+        spGui.add(controls, 'metal').onChange(function(e){
+            meshMaterial.metal = e;
+            meshMaterial.needsUpdate = true;
+        })
+        spGui.add(controls, 'wrapAround').onChange(function (e) {
+            meshMaterial.wrapAround = e;
+            meshMaterial.needsUpdate = true;
+        });
+
+        spGui.add(controls, 'wrapR', 0, 1).step(0.01).onChange(function (e) {
+            meshMaterial.wrapRGB.x = e;
+        });
+
+        spGui.add(controls, 'wrapG', 0, 1).step(0.01).onChange(function (e) {
+            meshMaterial.wrapRGB.y = e;
+        });
+
+        spGui.add(controls, 'wrapB', 0, 1).step(0.01).onChange(function (e) {
+            meshMaterial.wrapRGB.z = e;
         });
 
         render();
@@ -239,7 +216,6 @@
             cube.rotation.y = step += 0.01;
             plane.rotation.y = step;
             sphere.rotation.y = step;
-
 
             // render using requestAnimationFrame
             requestAnimationFrame(render);
@@ -253,7 +229,6 @@
             stats.setMode(0); // 0: fps, 1: ms
 
 
-            // Align top-left
             stats.domElement.style.position = 'absolute';
             stats.domElement.style.left = '0px';
             stats.domElement.style.top = '0px';
@@ -262,11 +237,8 @@
 
             return stats;
         }
-    };
-
+    }
     window.onload = init;
-
-
 </script>
 </body>
 </html>

@@ -19,7 +19,7 @@
             var scene = new THREE.Scene();
 
             // 添加雾化效果
-            scene.fog = new THREE.Fog(0xffffff, 0.015, 100);
+            scene.fog = new THREE.Fog(0xff00ff, 0.015, 100);
             // scene.fog = new THREE.Fog(0xffffff, 0.015);
             var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             scene.add(camera);

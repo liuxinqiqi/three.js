@@ -27,6 +27,7 @@
         webGLRenderer.shadowMapEnabled = true;
         renderer = webGLRenderer;
 
+        // // 使用CanvasRenderer对象
         var canvasRenderer = new THREE.CanvasRenderer();
         canvasRenderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -135,6 +136,7 @@
                     meshMaterial.side = THREE.DoubleSide;
                     break;
             }
+            // needsUpdate  是否刷新， 值为true的时候，会使用新的材质属性刷新它的缓存 
             meshMaterial.needsUpdate = true;
         });
         spGui.addColor(controls, 'color').onChange(function(e){

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>2D CircleGeometry</title>
+    <script type="text/javascript" src="../../learning-threejs-master/libs/three.js"></script>
+    <script type="text/javascript" src="../../learning-threejs-master/libs/stats.js"></script>
+    <script type="text/javascript" src="../../learning-threejs-master/libs/dat.gui.js"></script>
+</head>
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+    <script type="text/javascript">
+    function init(){
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0xEEEEEE, 1.0));
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        webGLRenderer.shadowMapEnabled = true;
+
+        // 自定义函数 （创建多材质的网格）
+        // 半径，分段，起始角，角度
+        var circle = createMesh(new THREE.CircleGeometry(4, 10, 0.3*Math.PI*2, 0.3*Math.PI*2));
+        scene.add(circle);
+
+        camera.position.x = -20;
+        camera.position.y = 30;
+        camera.position.z = 40;
+        camera.lookAt(new THREE.Vector3(10, 0, 0));
+
+        var spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-40, 60, -10);
+        scene.add(spotLight);
+
+        // add the output of the renderer to the html element
+        document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+
+        var step = 0;
+        var controls = new function(){
+            this.radius = 4;
+            this.thetaStart = 0.3*Math.PI*2;
+            this.thetaLength = 0.3*Math.PI*2;
+            this.segments = 10;
+            // this.width = plane.children[0].geometry.parameters.width;
+            // this.height = plane.children[0].geometry.parameters.height;
+
+            // this.widthSegments = plane.children[0].geometry.parameters.widthSegments;  // 1. widthSegments 代表x方向上水平分为三份
+            // this.heightSegments = plane.children[0].geometry.parameters.heightSegments;
+
+            this.redraw = function(){
+                scene.remove(circle);
+                // createMesh：创建多材质的网格
+                circle = createMesh(new THREE.CircleGeometry(controls.radius, controls.segments, controls.thetaStart, controls.thetaLength));
+
+                scene.add(circle);
+            };
+
+        };
+
+        var gui = new dat.GUI();
+        // redaw 自定义函数（整合）
+        gui.add(controls, 'radius', 0, 40).onChange(controls.redraw);
+        gui.add(controls, 'segments', 0, 40).onChange(controls.redraw);
+        gui.add(controls, 'thetaStart', 0, 10).onChange(controls.redraw);
+        gui.add(controls, 'thetaLength', 0, 10).onChange(controls.redraw);
+        render();
+
+        function createMesh(geom){
+            var meshMaterial = new THREE.MeshNormalMaterial();
+            meshMaterial.side = THREE.DoubleSide;   // 材质设置为双面的，不然背对相机的时候看不到
+            var wireFrameMat = new THREE.MeshBasicMaterial();  // 用来打开相框效果
+            wireFrameMat.wireframe = true;
+
+            var circle = THREE.SceneUtils.createMultiMaterialObject(geom, [meshMaterial, wireFrameMat]);
+            return circle;
+        }
+
+        function render(){
+            stats.update();
+            circle.rotation.y = step += 0.01;
+            requestAnimationFrame(render);
+            webGLRenderer.render(scene, camera);
+        }
+
+        function initStats() {
+            var stats = new Stats();
+            stats.setMode(0); // 0: fps, 1: ms
+
+            // Align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+
+            return stats;
+            }
+
+    }
+
+    window.onload = init();
+    </script>
+</body>
+</html>

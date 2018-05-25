@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>LineBasicMaterial</title>
+    <script type="text/javascript" src="../../learning-threejs-master/libs/three.js"></script>
+    <script src="../../learning-threejs-master/libs/stats.js"></script>
+</head>
+<body>
+    <div id="Stats-output"></div>
+    <div id="WebGL-output"></div>
+
+    <script type="text/javascript">
+    function init(){
+        var stats = initStats();
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setClearColor(new THREE.Color(0x000000, 1.0));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMapEnabled = true;
+
+        camera.position.x = -30;
+        camera.position.y = 40;
+        camera.position.z = 30;
+        camera.lookAt(scene.position);
+
+        var ambientLight = new THREE.AmbientLight(0xffffff);
+        scene.add(ambientLight);
+
+        var spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-40, 60, -10);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        // 获取一组x，y坐标，返回一个gosper曲线，这是一种填充二维空间的简单算法。
+        var points = gosper(4, 60);
+
+        var lines = new THREE.Geometry();
+        var colors = [];
+        var i = 0;
+        points.forEach(function(e){
+            // vertices 用来保存模型中所有顶点位置的数组。
+            lines.vertices.push(new THREE.Vector3(e.x, e.z, e.y));
+            colors[i] = new THREE.Color(0xffffff);
+            colors[i].setHSL(e.x / 100 + 0.5, (e.y * 20) / 300, 0.8);
+            i++;
+        });
+
+        lines.colors = colors;
+        // 1. 知识点 LineBasicMaterial
+        var material = new THREE.LineBasicMaterial({
+            opacity: 1.0,
+            linewidth: 1,
+            vertexColors: THREE.VertexColors   // vertexColors — 定义顶点如何着色。缺省是 THREE.NoColors。
+        });
+
+        var line = new THREE.Line(lines, material);
+        line.position.set(25, -30, -60);
+        scene.add(line);
+
+        document.getElementById("WebGL-output").appendChild(renderer.domElement);
+
+        var step = 0;
+        render();
+
+        function render(){
+            stats.update();
+            line.rotation.z = step += 0.01;
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+
+
+        // 这个函数可以不看
+        function gosper(a, b){
+            var turtle = [0, 0, 0];
+            var points = [];
+            var count = 0;
+
+            rg(a, b, turtle);
+
+            return points;
+
+            function rt(x){
+                turtle[2] += x;
+            }
+            function lt(x) {
+                turtle[2] -= x;
+            }
+
+            function fd(dist) {
+//                ctx.beginPath();
+                points.push({x: turtle[0], y: turtle[1], z: Math.sin(count) * 5});
+//                ctx.moveTo(turtle[0], turtle[1]);
+
+                var dir = turtle[2] * (Math.PI / 180);
+                turtle[0] += Math.cos(dir) * dist;
+                turtle[1] += Math.sin(dir) * dist;
+
+                points.push({x: turtle[0], y: turtle[1], z: Math.sin(count) * 5});
+//                ctx.lineTo(turtle[0], turtle[1]);
+//                ctx.stroke();
+
+            }
+
+            function rg(st, ln, turtle){
+                st--;
+                ln = ln / 2.6457;
+                if (st > 0) {
+//                    ctx.strokeStyle = '#111';
+                    rg(st, ln, turtle);
+                    rt(60);
+                    gl(st, ln, turtle);
+                    rt(120);
+                    gl(st, ln, turtle);
+                    lt(60);
+                    rg(st, ln, turtle);
+                    lt(120);
+                    rg(st, ln, turtle);
+                    rg(st, ln, turtle);
+                    lt(60);
+                    gl(st, ln, turtle);
+                    rt(60);
+                }
+                if (st == 0) {
+                    fd(ln);
+                    rt(60);
+                    fd(ln);
+                    rt(120);
+                    fd(ln);
+                    lt(60);
+                    fd(ln);
+                    lt(120);
+                    fd(ln);
+                    fd(ln);
+                    lt(60);
+                    fd(ln);
+                    rt(60)
+                }
+            }
+            function gl(st, ln, turtle) {
+                st--;
+                ln = ln / 2.6457;
+                if (st > 0) {
+//                    ctx.strokeStyle = '#555';
+                    lt(60);
+                    rg(st, ln, turtle);
+                    rt(60);
+                    gl(st, ln, turtle);
+                    gl(st, ln, turtle);
+                    rt(120);
+                    gl(st, ln, turtle);
+                    rt(60);
+                    rg(st, ln, turtle);
+                    lt(120);
+                    rg(st, ln, turtle);
+                    lt(60);
+                    gl(st, ln, turtle);
+                }
+                if (st == 0) {
+                    lt(60);
+                    fd(ln);
+                    rt(60);
+                    fd(ln);
+                    fd(ln);
+                    rt(120);
+                    fd(ln);
+                    rt(60);
+                    fd(ln);
+                    lt(120);
+                    fd(ln);
+                    lt(60);
+                    fd(ln);
+                }
+            }
+
+
+        }
+
+        function initStats() {
+            var stats = new Stats();
+
+            stats.setMode(0); // 0: fps, 1: ms
+
+            // Align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+
+            return stats;
+            }
+
+
+    }
+
+    window.onload = init;
+    </script>
+</body>
+</html>
